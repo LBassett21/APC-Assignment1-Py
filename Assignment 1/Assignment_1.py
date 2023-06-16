@@ -100,9 +100,11 @@ class Admin(user):
                 idn = input("ID number: ")
                 fn = input("First name: ")
                 ln = input("Last name: ")
+                title = input("Title: ")
                 yoh = input("Year of Hire: ")
                 dept = input("Department: ")
                 email = input("Email: ")
+                new_instructor(idn,fn,ln,title,yoh,dept,email)
             elif choice == "Student":
                 print("Please enter the following information")
                 idn = input("ID number: ")
@@ -111,6 +113,7 @@ class Admin(user):
                 egy = input("Expected graduation year: ")
                 major = input("Major: ")
                 email = input("Email: ")
+                new_student(idn,fn,ln,egy,major,email)
             else:
                 print("Invalid Input!")
         else:
@@ -175,22 +178,29 @@ def add_student():
     for student_info in all_student_info:
         ID, first_name, last_name, expectedgradyear, major, email = student_info
         existing_student = next((student for student in student_list if student.ID == ID), None)
+        if existing_student:
+            continue
+
         newstudent = student(ID, first_name, last_name, expectedgradyear, major, email)
         student_list.append(newstudent)
 
     return student_list
 
 def add_instructor():
-    instructors = []
+    instructor_list = []
     cursor.execute("""SELECT * FROM instructor""")
     all_instructor_info = cursor.fetchall()
 
     for instructor_info in all_instructor_info:
         ID, first_name, last_name, title, yearofhire, department, email = instructor_info
-        newinstructor = instructor(ID, first_name, last_name, title, yearofhire, department, email)
-        instructors.append(newinstructor)
+        existing_instructor = next((instructor for instructor in instructor_list if instructor.ID == ID), None)
+        if existing_instructor:
+            continue
 
-    return instructors
+        newinstructor = instructor(ID, first_name, last_name, title, yearofhire, department, email)
+        instructor_list.append(newinstructor)
+
+    return instructor_list
 
 def new_admin(ID, firstname, lastname, title, office, email):
     cursor.execute("""SELECT ID FROM admin WHERE ID=?""", (ID,))
@@ -202,6 +212,25 @@ def new_admin(ID, firstname, lastname, title, office, email):
         cursor.execute("""INSERT INTO admin (ID, NAME, SURNAME, TITLE, OFFICE, EMAIL) VALUES (?,?,?,?,?,?)""",(ID,firstname,lastname,title,office,email))
         db.commit()
 
+def new_instructor(ID, first_name, last_name, title, yearofhire, department, email):
+    cursor.execute("""SELECT ID FROM instructor WHERE ID=?""", (ID,))
+    existing_id = cursor.fetchone()
+
+    if existing_id: 
+        print("Error: User with ID", ID, "already exists.")
+    else:
+        cursor.execute("""INSERT INTO instructor (ID, NAME, SURNAME, TITLE, HIREYR, DEPT, EMAIL) VALUES (?,?,?,?,?,?,?)""",(ID, first_name, last_name, title, yearofhire, department, email))
+        db.commit()
+
+def new_student(ID, first_name, last_name, expectedgradyear, major, email):
+    cursor.execute("""SELECT ID FROM student WHERE ID=?""", (ID,))
+    existing_id = cursor.fetchone()
+
+    if existing_id: 
+        print("Error: User with ID", ID, "already exists.")
+    else:
+        cursor.execute("""INSERT INTO student (ID, NAME, SURNAME, GRADYEAR, MAJOR, EMAIL) VALUES (?,?,?,?,?,?)""",(ID, first_name, last_name, expectedgradyear, major, email))
+        db.commit()
 
 def print_database():
     admin_objects = add_admin()
@@ -225,7 +254,7 @@ student_objects = add_student()
 instructor_object = add_instructor()
 print_database()
 
-cursor.execute("""PRAGMA table_info(admin)""")
+cursor.execute("""PRAGMA table_info(instructor)""")
 columns = cursor.fetchall()
 
 column_names = [column[1] for column in columns]
@@ -275,7 +304,7 @@ while True:
     elif choice == "2":
         print("Test2")
     elif choice == "3":
-        print("Test3")
+        print_database()
     elif choice == "4":
         print("Test4")
     elif choice == "5":
